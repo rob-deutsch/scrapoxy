@@ -53,7 +53,7 @@ module.exports = class DigitalOceanAPI {
             path: `/droplets/${id}`,
         };
 
-        return this._makeRequest(options)
+        return this._makeRequest(options, null, true)
             .catch((err) => {
                 if (err.message) {
                     throw err.message;
@@ -94,7 +94,7 @@ module.exports = class DigitalOceanAPI {
     }
 
 
-    _makeRequest(options, body) {
+    _makeRequest(options, body, notFoundIsOK) {
         const path = url.format({
             pathname: `/v2${options.path}`,
             query: options.qs,
@@ -119,6 +119,10 @@ module.exports = class DigitalOceanAPI {
             reqOptions.headers['Content-Length'] = Buffer.byteLength(payload);
         }
 
+        if (typeof notFoundIsOK === 'undefined' || notFoundIsOK === null){
+            notFoundIsOK = false
+         }
+
         return new Promise((resolve, reject) => {
             const req = https.request(reqOptions, (res) => {
                 const chunks = [];
@@ -136,8 +140,8 @@ module.exports = class DigitalOceanAPI {
                         // Ignore
                     }
 
-                    // Transform wrong status code to error
-                    if (res.statusCode < 200 || res.statusCode >= 300) {
+                    // Transform wrong status code to 
+                    if ((res.statusCode < 200 || res.statusCode >= 300) && !notFoundIsOK) {
                         return reject(resBody);
                     }
 
